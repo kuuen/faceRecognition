@@ -4,3 +4,5 @@ pythonで使用するライブラリをインストール 「pip install ライ�
 
 dlibについてはcmake(https://cmake.org/download/)をインストールした後にpip install
 https://cmake.org/download/
+
+images1.jpgを認証する人の顔写真に差し替える
