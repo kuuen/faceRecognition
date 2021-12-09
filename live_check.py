@@ -40,6 +40,14 @@ img1 = Image.open(image_path1)
 
 # 顔データを160×160に切り抜き
 img_cropped1 = mtcnn(img1)
+
+# with open(image_path1, 'rb') as rf:# 追加
+#   img_buf= np.frombuffer(rf.read(), dtype=np.uint8)# 追加
+#   img = cv2.imdecode(img_buf, cv2.IMREAD_UNCHANGED)# 追加
+# ret, encoded  = cv2.imencode(".jpg", img)# 追加
+# frame = cv2.resize(encoded, (500, 300))# 追加
+# img_cropped1 = detector(frame, 1) # 追加
+
 img_embedding1 = resnet(img_cropped1.unsqueeze(0))
 
 # 登録二人目
@@ -92,6 +100,10 @@ while True:
     img = Image.open(jpgfile)
     # save_pathを指定すると、切り取った顔画像が確認できます。
     img_cropped = mtcnn(img, save_path="cropped_img1.jpg")
+
+    if img_cropped == None :
+      break
+
     # 切り抜いた顔データを512個の数字に
     img_embedding = resnet(img_cropped.unsqueeze(0))
 
