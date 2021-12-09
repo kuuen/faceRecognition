@@ -33,6 +33,7 @@ cap = cv2.VideoCapture(0)
 
 # 認識データ
 image_path1 = "images1.jpg"
+image_path2 = "images2.jpg"
 
 # 画像データ取得
 img1 = Image.open(image_path1)
@@ -40,6 +41,13 @@ img1 = Image.open(image_path1)
 # 顔データを160×160に切り抜き
 img_cropped1 = mtcnn(img1)
 img_embedding1 = resnet(img_cropped1.unsqueeze(0))
+
+# 登録二人目
+img_embedding2 = None
+if os.path.exists(image_path2):
+  img2 = Image.open(image_path2)
+  img_cropped2 = mtcnn(img2)
+  img_embedding2 = resnet(img_cropped2.unsqueeze(0))
 
 # 類似度の関数
 def cos_similarity(p1, p2): 
@@ -88,13 +96,27 @@ while True:
     img_embedding = resnet(img_cropped.unsqueeze(0))
 
     # 512個の数字にしたものはpytorchのtensorという型なので、numpyの方に変換
+    p = img_embedding.squeeze().to('cpu').detach().numpy().copy()
     p1 = img_embedding1.squeeze().to('cpu').detach().numpy().copy()
-    p2 = img_embedding.squeeze().to('cpu').detach().numpy().copy()
 
     # 類似度を計算して顔認証
-    img1vs2 = cos_similarity(p1, p2)
+    imgvs1 = cos_similarity(p, p1)
 
-    print("1つ目と2つ目の比較", img1vs2)
+    print("images1さんの判定 : ", imgvs1, "%")
+
+    if img_embedding2 == None:
+      if os.path.exists(image_path2):
+        img2 = Image.open(image_path2)
+        img_cropped2 = mtcnn(img2)
+        img_embedding2 = resnet(img_cropped2.unsqueeze(0))
+
+        p2 = img_embedding2.squeeze().to('cpu').detach().numpy().copy()
+        imgvs2 = cos_similarity(p, p2)
+        print("images2さんの判定 : ", imgvs2, "%")
+    else :
+      p2 = img_embedding2.squeeze().to('cpu').detach().numpy().copy()
+      imgvs2 = cos_similarity(p, p2)
+      print("images2さんの判定 : ", imgvs2, "%")
 
   # カメラの内容を画面に表示する
   cv2.imshow('test', frame)
@@ -102,3 +124,4 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 print("test")
+
