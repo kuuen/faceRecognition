@@ -27,4 +27,8 @@ pip install dlib
 pip install facenet_pytorch  
 
 
-images1.jpgを認証する人の顔写真に差し替える
+images1.jpgを認証する人の顔写真に差し替える  
+2人目まで認識できる。ファイル名は images2.jp にする 
+  
+修正予定  
+MTCNN、dlib両方しようしているからどちらか一方に絞りたい  
