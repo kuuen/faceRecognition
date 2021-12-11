@@ -99,8 +99,10 @@ while True:
     #cv2.imwrite(jpgfile, im)
     img = Image.open(jpgfile)
     # save_pathを指定すると、切り取った顔画像が確認できます。
-    img_cropped = mtcnn(img, save_path="cropped_img1.jpg")
+    #img_cropped = mtcnn(img, save_path="cropped_img1.jpg")
+    img_cropped = mtcnn(img)
 
+    # 正しく顔画像が取得できない場合がある
     if img_cropped == None :
       break
 
@@ -130,10 +132,14 @@ while True:
       imgvs2 = cos_similarity(p, p2)
       print("images2さんの判定 : ", imgvs2, "%")
 
+    # 枠を描画
+    color = red
+    border = 5
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness = border)
+
   # カメラの内容を画面に表示する
   cv2.imshow('test', frame)
 
 cap.release()
 cv2.destroyAllWindows()
 print("test")
-
