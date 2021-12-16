@@ -102,4 +102,20 @@ class UsersController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
+
+    public function getUserName($id)
+    {
+        $this->autoRender = false;
+
+        $user = $this->Users->find('all', array(
+            'fields' => array('name'),
+            'conditions'=>array('id'=> $id)
+        ))->first();
+
+        if ($user != null) {
+            echo $user->name;
+        }
+    }
+
+
 }

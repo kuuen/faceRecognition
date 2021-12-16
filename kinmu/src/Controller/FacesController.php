@@ -107,4 +107,47 @@ class FacesController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
+
+    public function insert($user_id, $facepath)
+    {
+        $this->autoRender = false;
+
+        $face = $this->Faces->newEmptyEntity();
+
+        $face->user_id = $user_id;
+        $face->facepath = $facepath;
+
+        if ($this->Faces->save($face)) {
+            $this->Flash->success(__('The face has been saved.'));
+
+            echo 'OK';
+        } else {
+            echo 'NG';
+        }
+    }
+
+    public function getFacePaths()
+    {
+        $this->autoRender = false;
+
+        $result = $this->Faces->find()->contain(['Users']);
+        
+        $status = !empty($result);
+
+        // if(!$status) {
+        //     $error = array(
+        //       'message' => 'データがありません',
+        //       'code' => 404
+        //     );
+        //   }
+
+        // JSON で出力
+        // return json_encode(compact('result'));
+
+        return $this->response->withStringBody(json_encode(compact('result')));
+    }
+
+
+
+
 }
