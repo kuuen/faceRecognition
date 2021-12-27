@@ -20,6 +20,7 @@ def videoStart():
     red = (0, 0, 255)
     green = (0, 255, 0)
     fid = 1
+
     return cv2.VideoCapture(0)
 
 pool = ThreadPool(processes=1)
@@ -87,7 +88,11 @@ def kaokensyutu():
 
     result = ''
 
+    # 非同期で処理した結果を待つ
     cap = async_result.get()
+    cap.set(3, 1920)
+    cap.set(4, 1080)
+    cap.set(5, 30)
 
     while True:
         if values['id'] == '':
@@ -110,6 +115,12 @@ def kaokensyutu():
 
         # カメラの内容を画面に表示する
         cv2.imshow('test', frame)
+        # 映像をpng→jpgだとどうか？画像に変換してwindow画面を更新
+        # frame_1 = frame[90:990, 510:1410]
+        # img_y, img_x = frame_1.shape[:2]
+
+        # imgbytes = cv2.imencode('.png', frame_1)[1].tobytes()
+        # window['-IMAGE-'].update(data = imgbytes)
 
         # 顔検出
         dets = detector(frame, 1)
@@ -183,11 +194,20 @@ sg.theme('DarkAmber')
 #　リストボックスに表示するデータ
 choices = ([[1, '赤'], [2, '緑']])
 
-layout = [  [sg.Text('ここは1行目')],
-            [sg.Text('社員番号'), sg.Input('', key = 'id'), sg.Text(key='name') ,sg.Button('検索', key='find')],
-            [sg.Button('顔登録開始', key='start'), sg.Button('キャンセル')] ]
+frame = sg.Image(filename='', key='image')
 
-window = sg.Window('サンプルプログラム', layout)
+### レイアウト設定 ###
+layout_0 = [  [sg.Text('ここは1行目')],
+            [sg.Text('社員番号'), sg.Input('', key = 'id'), sg.Text(key='name') ,sg.Button('検索', key='find')],
+            [sg.Button('顔登録開始', key='start'), sg.Button('キャンセル')] 
+            ]
+
+layout_1 = [
+            [sg.Image(filename='', key='-IMAGE-'), layout_0]
+           ]         
+
+# window = sg.Window('サンプルプログラム', layout_1)
+window = sg.Window('OpenCV Image', layout_1, location=(300, 10))
 
 while True:
     event, values = window.read()

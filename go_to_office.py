@@ -5,6 +5,7 @@ import cv2, dlib, pprint, os
 import numpy as np
 from keras.models import load_model
 import time
+import datetime
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image
 import requests
@@ -22,6 +23,10 @@ def getSyainData():
   response = requests.get('http://localhost/kinmu/Faces/getFacePaths')
   print(response.status_code)    # HTTPのステータスコード取得
   print(response.text)    # レスポンスのHTMLを文字列で取得
+
+  if response.status_code != 200:
+    print('サーバーエラー')
+    return
 
   syaindata = json.loads(response.text)
 
@@ -144,7 +149,12 @@ while True:
 
       # 顔データ判定
       if res >= 0.7 :
-        drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん おはようございます！', frame)
+        dt = datetime.datetime.today()
+        t = dt.time()
+        if t <= datetime.time(11, 35, 00):
+          drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん おはようございます！', frame)
+        elif t >= datetime.time(13, 00, 00):
+          drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん お疲れ様です！', frame)
 
 cap.release()
 cv2.destroyAllWindows()
