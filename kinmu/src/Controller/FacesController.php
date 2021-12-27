@@ -145,6 +145,7 @@ class FacesController extends AppController
         // return json_encode(compact('result'));
 
         return $this->response->withStringBody(json_encode(compact('result')));
+        // echo json_encode(compact('result'));
     }
 
 
