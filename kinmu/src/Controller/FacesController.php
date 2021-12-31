@@ -108,21 +108,11 @@ class FacesController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
-    public function insert($user_id, $facepath)
+    public function getcsrf()
     {
-        $this->autoRender = false;
-
-        $face = $this->Faces->newEmptyEntity();
-
-        $face->user_id = $user_id;
-        $face->facepath = $facepath;
-
-        if ($this->Faces->save($face)) {
-            $this->Flash->success(__('The face has been saved.'));
-
-            echo 'OK';
+        if ($this->request->is(['patch', 'post', 'put'])) {
         } else {
-            echo 'NG';
+            echo 'test';
         }
     }
 
@@ -147,8 +137,4 @@ class FacesController extends AppController
         return $this->response->withStringBody(json_encode(compact('result')));
         // echo json_encode(compact('result'));
     }
-
-
-
-
 }
