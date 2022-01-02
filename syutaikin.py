@@ -9,6 +9,7 @@ from PIL import Image
 import requests
 import json
 import logging
+from bs4 import BeautifulSoup
 from PIL import ImageFont, ImageDraw, Image
 import PySimpleGUI as sg
 
@@ -16,7 +17,7 @@ save_dir = "./facedata"
 
 # なぜかkey='name'が指定されていないとデバック中エラー表示が出てしまうので隠す
 layout = [
-  					[sg.Text('顔認証', size=(40, 1), justification='center', font='Helvetica 20',key='-status-')],
+  					[sg.Text('出退勤', size=(40, 1), justification='center', font='Helvetica 20',key='-status-')],
 						[sg.Text(key='name', visible= False)],
 						[sg.Image(filename='', key='image')],
             [sg.Button('顔登録開始', key='start'), sg.Button('停止', key = 'stop'), sg.Button('キャンセル', key = 'cancel')] 
@@ -47,7 +48,7 @@ def getSyainData():
   print(response.status_code)    # HTTPのステータスコード取得
   print(response.text)    # レスポンスのHTMLを文字列で取得
 
-  if response.status_code != 200:
+  if response.status_code != 200 :
     print('サーバーエラー')
     return
 
@@ -61,6 +62,11 @@ def getSyainData():
 
       # 顔データを160×160に切り抜き
       img_cropped = mtcnn(img)
+			# 正しく顔画像が取得できない場合がある
+
+      if img_cropped == None:
+        break
+
       img_embedding = resnet(img_cropped.unsqueeze(0))
       syain["facedata"] = img_embedding.squeeze().to('cpu').detach().numpy().copy()
     else:
@@ -68,31 +74,33 @@ def getSyainData():
 
   return syaindata["result"]
 
-def sendSyukinData():
-  response = requests.get('http://localhost/kinmu/Facesattendances/syukkin/%s/%s')
-  print(response.status_code)    # HTTPのステータスコード取得
-  print(response.text)    # レスポンスのHTMLを文字列で取得
+def sendSyukinData(id, syusyaDt):
 
-  if response.status_code != 200:
-    print('サーバーエラー')
-    return
+	# csrfトークン取得するためにアクセス
+	url = 'http://localhost/kinmu/Facesattendances/syukkin'
+	response = requests.get(url)
 
-  syaindata = json.loads(response.text)
+	# クッキーを取得
+	cookies = response.cookies
+	bs = BeautifulSoup(response.text, "html.parser")
 
-  for syain in syaindata["result"]:
+	# csrfトークンを取得
+	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
 
-    if os.path.exists(save_dir):
-        # 画像データ取得
-      img = Image.open(save_dir + '\\' + syain["facepath"])
+	# ヘッダーに追加
+	headers = {'X-CSRF-Token': token}
 
-      # 顔データを160×160に切り抜き
-      img_cropped = mtcnn(img)
-      img_embedding = resnet(img_cropped.unsqueeze(0))
-      syain["facedata"] = img_embedding.squeeze().to('cpu').detach().numpy().copy()
-    else:
-      syain["facedata"] = 'NoData'
+	# 送信情報
+	payload = {'id': id, 'syusya_dt' : syusyaDt}
 
-  return syaindata["result"]
+	response = requests.post(url, data = payload, headers=headers, cookies=cookies)
+	scode = response.status_code
+
+	if scode == 200:
+		return True
+	else:
+		return False
+
 
 
 # 類似度の関数
@@ -182,12 +190,13 @@ def kensyutu():
 				flg = True
 				dt = datetime.datetime.today()
 				t = dt.time()
+
+				# 仮でここに置く
+				sendSyukinData(syaindata['user']['id'],  format(dt, '%Y-%m-%d %H:%M:%S'))
+
 				if t <= datetime.time(11, 35, 00):
 					# drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん おはようございます！', frame)
 					window['-status-'].update(syaindata['user']['name'] + ' さん おはようございます！')
-
-
-
 				elif t >= datetime.time(13, 00, 00):
 					# drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん お疲れ様です！', frame)
 					window['-status-'].update(syaindata['user']['name'] + ' さん お疲れ様です！')
@@ -204,23 +213,6 @@ def kensyutu():
 		imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
 		window['image'].update(data=imgbytes)
 
-def face_registration(id, path) :
-
-		# url = 'http://localhost/kinmu/faces/insert?user_id=%s&path=%s'% (str(id), path)
-	url = 'http://localhost/kinmu/faces/insert/%s/%s'% (str(id), path)
-	# url = 'http://localhost/kinmu/faces/insert'
-	# data = {'user_id': str(id), 'path' : path}
-
-	response = requests.get(url)
-	# response = requests.post(url, data)
-	scode = response.status_code
-	print(scode)    			# HTTPのステータスコード取得
-	print(response.text)  # レスポンスのHTMLを文字列で取得
-
-	if scode == '200' or response.text == 'OK':
-		return True
-	else:
-		return False
 
 while True:
 	event, values = window.read(timeout=20)

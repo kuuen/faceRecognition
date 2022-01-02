@@ -22,7 +22,9 @@
             <fieldset>
                 <legend><?= __('Edit User') ?></legend>
                 <?php
-                    echo $this->Form->control('name');
+                    echo $this->Form->control('username');
+                    echo $this->Form->control('password');
+                    echo $this->Form->control('role');
                 ?>
             </fieldset>
             <?= $this->Form->button(__('Submit')) ?>

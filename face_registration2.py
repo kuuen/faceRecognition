@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import threading
 from multiprocessing.pool import ThreadPool
 import numpy as np
+from facenet_pytorch import MTCNN, InceptionResnetV1
 
 layout = [
   					[sg.Text('Realtime movie', size=(40, 1), justification='center', font='Helvetica 20',key='-status-')],
@@ -20,6 +21,8 @@ layout = [
         ]
 
 window = sg.Window('顔登録', layout, location=(100, 100))	
+
+mtcnn = MTCNN(image_size=160, margin=10)
 
 cap = None
 # Webカメラから入力を開始
@@ -61,6 +64,16 @@ def kensyutu():
 		# cv2.imwrite(jpgfile, im)
 		cv2.imwrite(jpgfile, frame)
 
+		# 画像データが使用できるか確認
+		img = Image.open(jpgfile)
+		# 顔データを160×160に切り抜き
+		img_cropped = mtcnn(img)
+
+		# 使用できない場合、破棄する
+		if img_cropped == None:
+			os.remove(jpgfile)
+			filename = ''
+
 		# 枠を描画
 		color = red
 		border = 5
@@ -73,7 +86,8 @@ def kensyutu():
 	return result
 
 def face_registration(id, path) :
-
+	''' 顔情報登録
+	'''
 	# csrfトークン取得するためにアクセス
 	url = 'http://localhost/kinmu/faces/add'
 	response = requests.get(url)
@@ -85,14 +99,11 @@ def face_registration(id, path) :
 	# csrfトークンを取得
 	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
 
-
-	# url = 'http://localhost/kinmu/faces/add'
-
 	# ヘッダーに追加
 	headers = {'X-CSRF-Token': token}
 
-	# 追加情報 (トークンはいらないかも)
-	payload = {'_csrfToken': token, 'user_id': id, 'facepath': path}
+	# 送信情報
+	payload = {'user_id': id, 'facepath': path}
 
 	# 登録処理
 	response = requests.post(url, data = payload, headers=headers, cookies=cookies)
@@ -101,20 +112,85 @@ def face_registration(id, path) :
 	#f = open("file.html", "w")
 	#f.write(response.text)
 
+	# なんかよく失敗する。CSRF対策あたりが原因
 	if scode == 200:
 		return True
 	else:
 		return False
 
 def getName(id):
-	response = requests.get('http://localhost/kinmu/users/getUserName/%s' % str(id))
-	print(response.status_code)    # HTTPのステータスコード取得
-	print(response.text)    # レスポンスのHTMLを文字列で取得
+	''' 名前取得
+	'''
 
-	if response.text == '':
+	url = 'http://localhost/kinmu/users/login'
+
+	session = requests.Session()
+	response = session.get(url)
+
+	# # csrfトークン取得するためにアクセス
+	# url = 'http://localhost/kinmu/users/login'
+	# response = requests.get(url)
+
+	# クッキーを取得
+	# cookies = response.cookies
+
+	bs = BeautifulSoup(response.text, "html.parser")
+
+	# csrfトークンを取得
+	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+	payload = {'username': 'sys', 'password' : 123}
+
+	response = session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = response.cookies)
+
+	f = open("file.html", "w")
+	f.write(response.text)
+
+	#------------------------------------------------------------
+
+	bs = BeautifulSoup(response.text, "html.parser")
+	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+
+	# csrfトークン取得するためにアクセス
+	url = 'http://localhost/kinmu/users/getUserName'
+
+	response = session.get(url, headers = {'X-CSRF-Token': token}, cookies = response.cookies)
+	# response = requests.get(url)
+
+	if response.status_code != 200:
+		sg.popup_error('サーバーエラー')
+		return ''
+
+	# クッキーを取得
+	# cookies = response.cookies
+	bs = BeautifulSoup(response.text, "html.parser")
+
+	# csrfトークンを取得
+	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+
+	# ヘッダーに追加
+	he = {'X-CSRF-Token': token}
+	
+	# 送信情報
+	payload = {'id': id}
+
+	response = session.post(url, data = payload, headers = he, cookies = response.cookies)
+
+	# print(response.status_code)    # HTTPのステータスコード取得
+	# print(response.text)    # レスポンスのHTMLを文字列で取得
+
+
+
+	result = ''
+	if response.status_code == 200:
+
+		if response.text == '':
 			sg.popup_error('社員が存在しません')
+		else:
+			result = response.text
+	else :
+		sg.popup_error('サーバーエラー')
 
-	return response.text
+	return result
 
 recording = False
 
@@ -170,4 +246,3 @@ while True:
 			window['-status-'].update('待機中')
 
 window.close()
-

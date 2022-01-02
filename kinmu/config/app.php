@@ -51,9 +51,9 @@ return [
         'namespace' => 'App',
         'encoding' => env('APP_ENCODING', 'UTF-8'),
         //'defaultLocale' => env('APP_DEFAULT_LOCALE', 'en_US'),
-				'defaultLocale' => env('APP_DEFAULT_LOCALE', 'ja_JP'),
+        'defaultLocale' => env('APP_DEFAULT_LOCALE', 'ja_JP'),
         //'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'UTC'),
-				'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'Asia/Tokyo'),
+        'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'Asia/Tokyo'),
         'base' => false,
         'dir' => 'src',
         'webroot' => 'webroot',
@@ -78,7 +78,8 @@ return [
      *   You should treat it as extremely sensitive data.
      */
     'Security' => [
-        'salt' => env('SECURITY_SALT'),
+        // 'salt' => env('SECURITY_SALT'),
+        'salt' => env('SECURITY_SALT', 'a3af2c5df7e1781db8a3e3c4cdaczzza83662f3ade304c6148d5795f'),
     ],
 
     /*
@@ -299,8 +300,8 @@ return [
             'username' => 'root',
             'password' => '',
             'database' => 'kinmu',
-            //'timezone' => 'UTC',
-						'timezone' => '+9:00',
+//            'timezone' => 'UTC',
+            'timezone' => '+9:00',
             'flags' => [],
             'cacheMetadata' => true,
             'log' => false,

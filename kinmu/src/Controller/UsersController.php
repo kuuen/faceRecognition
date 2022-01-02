@@ -11,6 +11,22 @@ namespace App\Controller;
  */
 class UsersController extends AppController
 {
+
+    public function beforeFilter(\Cake\Event\EventInterface $event)
+    {
+        // // getUserNameは無制限に許可
+        // if (in_array($this->request->getParam('action'), ['getUserName'])) {
+        //   $this->Authorization->skipAuthorization();
+        // }
+    }
+
+    public function isAuthorized($user = null)
+    {
+        return (bool)($user['role'] === 'admin');
+
+        return parent::isAuthorized($user);
+    }
+
     /**
      * Index method
      *
@@ -103,19 +119,95 @@ class UsersController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
-    public function getUserName($id)
+    public function login()
     {
-        $this->autoRender = false;
-
-        $user = $this->Users->find('all', array(
-            'fields' => array('name'),
-            'conditions'=>array('id'=> $id)
-        ))->first();
-
-        if ($user != null) {
-            echo $user->name;
+        if ($this->request->is('post')) {
+            // identify()メソッドをもちいてリクエスト中の認証情報を使用してユーザーを識別する
+            $user = $this->Auth->identify();
+            if ($user) {
+                $this->Auth->setUser($user);
+                //$this->request->session()->delete('Auth.redirect'); // 固定ページに移動させたい場合
+                return $this->redirect($this->Auth->redirectUrl());
+            }
+            $this->Flash->error('ユーザー名またはパスワードが不正です。');
         }
     }
+    
+    // public function login() {
+    //     $success = false;
+    //     // ログイン処理
+    //     if ($this->request->is('post')) {
+    //       // ユーザ認証
+    //       $user = $this->Auth->identify();
+    //       if ($user) {
+    //         // ログインを記録
+    //         $this->Auth->setUser($user);
+    //         $success = true;
+    //       }
+    //     }
+    //     // レスポンス生成
+    //     if (!$this->getRequest()->is('ajax')) {
+    //       // HTML
+    //       if (!$this->getRequest()->getSession()->check('Flash.flash')) {
+    //         if ($success) {
+    //           $this->Flash->success(__('ログインしました'));
+    //         } else {
+    //           $this->Flash->error(__('Username or password is incorrect !'));
+    //         }
+    //       }
+    //       if ($success) {
+    //           return $this->redirect($this->Auth->redirectUrl());
+    //       }
+    //     } else {
+    //       // AJAX/JSON
+    //       if ($success) {
+    //         $this->set('login', 'ok');
+    //       } else {
+    //         $this->set('login', 'failed');
+    //       }
+    //       $this->set('_serialize', ['username', 'login']);
+    //     }
+    //   }
 
+    public function logout()
+    {
+        return $this->redirect($this->Auth->logout());
+    }
 
+    // public function logout() {
+    //     // ログアウト
+    //     $url = $this->Auth->logout();
+      
+    //     // レスポンス生成
+    //     if (!$this->getRequest()->is('ajax')) {
+    //       // HTML
+    //       $this->Flash->success('ログアウトしました');
+    //       return $this->redirect($url);
+    //     } else {
+    //       // AJAX/JSON
+    //       $this->set('logout', 'ok');
+    //       $this->set('_serialize', ['logout']);
+    //     }
+    // }
+
+    public function getUserName()
+    {
+        // 警告メッセージを出力しないようにする
+        error_reporting(0);
+
+        if ($this->request->is('post')) {
+            $this->autoRender = false;
+
+            $data = $this->request->getData();
+
+            $user = $this->Users->find('all', array(
+                'fields' => array('username'),
+                'conditions'=>array('id'=> $data["id"])
+            ))->first();
+    
+            if ($user != null) {
+                echo $user->username;
+            }
+        }
+    }    
 }

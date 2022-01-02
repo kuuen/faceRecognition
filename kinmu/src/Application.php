@@ -28,6 +28,20 @@ use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
 
+// src/Application.phpで以下のインポートを追加します
+// use Authorization\AuthorizationService;
+// use Authorization\AuthorizationServiceInterface;
+// use Authorization\AuthorizationServiceProviderInterface;
+// use Authorization\Middleware\AuthorizationMiddleware;
+// use Authorization\Policy\OrmResolver;
+// use Psr\Http\Message\ResponseInterface;
+
+// use Authentication\AuthenticationService;
+// use Authentication\AuthenticationServiceInterface;
+// use Authentication\AuthenticationServiceProviderInterface;
+// use Authentication\Middleware\AuthenticationMiddleware;
+// use Psr\Http\Message\ServerRequestInterface;
+
 /**
  * Application setup class.
  *
@@ -35,6 +49,7 @@ use Cake\Routing\Middleware\RoutingMiddleware;
  * want to use in your application.
  */
 class Application extends BaseApplication
+                        // implements AuthenticationServiceProviderInterface
 {
     /**
      * Load all the application configuration and bootstrap logic.
@@ -64,6 +79,7 @@ class Application extends BaseApplication
         }
 
         // Load more plugins here
+        $this->addPlugin('Authorization');
     }
 
     /**
@@ -95,13 +111,38 @@ class Application extends BaseApplication
             // Parse various types of encoded request bodies so that they are
             // available as array through $request->getData()
             // https://book.cakephp.org/4/en/controllers/middleware.html#body-parser-middleware
-            ->add(new BodyParserMiddleware())
+            ->add(new BodyParserMiddleware());
 
-            // Cross Site Request Forgery (CSRF) Protection Middleware
-            // https://book.cakephp.org/4/en/controllers/middleware.html#cross-site-request-forgery-csrf-middleware
-            ->add(new CsrfProtectionMiddleware([
+            // ☆☆CSRF保護を一部だけ解除
+            // // Cross Site Request Forgery (CSRF) Protection Middleware
+            // // https://book.cakephp.org/4/en/controllers/middleware.html#cross-site-request-forgery-csrf-middleware
+            // ->add(new CsrfProtectionMiddleware([
+            //     'httponly' => true,
+            // ])
+            // );
+
+            // ->add(new RoutingMiddleware($this))
+            //  // add Authentication after RoutingMiddleware
+            // ->add(new AuthenticationMiddleware($this));
+            // ->add(ErrorHandlerMiddleware::class)
+            // ->add(AssetMiddleware::class)
+            // ->add(new RoutingMiddleware($this, '_cake_routes_'))
+            // ->add(new CsrfProtectionMiddleware([
+            //    'httpOnly' => true
+            //  ]));
+
+            // ▼下記を追加
+            $csrf = new CsrfProtectionMiddleware([
                 'httponly' => true,
-            ]));
+            ]);
+            $csrf->skipCheckCallback(function ($request) {
+                if (
+                    $request->getParam('controller') === 'Users'
+                    && $request->getParam('action') === 'getUserName') {
+                    return true;
+                }
+            });
+            $middlewareQueue->add($csrf);
 
         return $middlewareQueue;
     }
@@ -133,4 +174,34 @@ class Application extends BaseApplication
 
         // Load more plugins here
     }
+
+
+    // public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+    // {
+    //     $authenticationService = new AuthenticationService([
+    //         'unauthenticatedRedirect' => '/users/login',
+    //         'queryParam' => 'redirect',
+    //     ]);
+    
+    //     // 識別子をロードして、電子メールとパスワードのフィールドを確認します
+    //     $authenticationService->loadIdentifier('Authentication.Password', [
+    //         'fields' => [
+    //             'username' => 'email',
+    //             'password' => 'password',
+    //         ]
+    //     ]);
+    
+    //     // 認証子をロードするには、最初にセッションを実行する必要があります
+    //     $authenticationService->loadAuthenticator('Authentication.Session');
+    //     // メールとパスワードを選択するためのフォームデータチェックの設定
+    //     $authenticationService->loadAuthenticator('Authentication.Form', [
+    //         'fields' => [
+    //             'username' => 'email',
+    //             'password' => 'password',
+    //         ],
+    //         'loginUrl' => '/users/login',
+    //     ]);
+    
+    //     return $authenticationService;
+    // }
 }
