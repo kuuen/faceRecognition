@@ -306,7 +306,9 @@ return [
             'cacheMetadata' => true,
             'log' => false,
             'quoteIdentifiers' => false,
+            'encoding' => 'utf8',
             'url' => env('DATABASE_URL', null),
+            'log' => true, // 追加
         ],
 
         /*
@@ -318,6 +320,7 @@ return [
             'persistent' => false,
             'timezone' => 'UTC',
             //'encoding' => 'utf8mb4',
+            'encoding' => 'utf8',
             'flags' => [],
             'cacheMetadata' => true,
             'quoteIdentifiers' => false,

@@ -111,15 +111,15 @@ class Application extends BaseApplication
             // Parse various types of encoded request bodies so that they are
             // available as array through $request->getData()
             // https://book.cakephp.org/4/en/controllers/middleware.html#body-parser-middleware
-            ->add(new BodyParserMiddleware());
+            ->add(new BodyParserMiddleware())
 
             // ☆☆CSRF保護を一部だけ解除
-            // // Cross Site Request Forgery (CSRF) Protection Middleware
-            // // https://book.cakephp.org/4/en/controllers/middleware.html#cross-site-request-forgery-csrf-middleware
-            // ->add(new CsrfProtectionMiddleware([
-            //     'httponly' => true,
-            // ])
-            // );
+            // Cross Site Request Forgery (CSRF) Protection Middleware
+            // https://book.cakephp.org/4/en/controllers/middleware.html#cross-site-request-forgery-csrf-middleware
+            ->add(new CsrfProtectionMiddleware([
+                'httponly' => true,
+            ])
+            );
 
             // ->add(new RoutingMiddleware($this))
             //  // add Authentication after RoutingMiddleware
@@ -131,18 +131,18 @@ class Application extends BaseApplication
             //    'httpOnly' => true
             //  ]));
 
-            // ▼下記を追加
-            $csrf = new CsrfProtectionMiddleware([
-                'httponly' => true,
-            ]);
-            $csrf->skipCheckCallback(function ($request) {
-                if (
-                    $request->getParam('controller') === 'Users'
-                    && $request->getParam('action') === 'getUserName') {
-                    return true;
-                }
-            });
-            $middlewareQueue->add($csrf);
+            // ▼下記を追加 csrfを一部無効化
+            // $csrf = new CsrfProtectionMiddleware([
+            //     'httponly' => true,
+            // ]);
+            // $csrf->skipCheckCallback(function ($request) {
+            //     if (
+            //         $request->getParam('controller') === 'Users'
+            //         && $request->getParam('action') === 'getUserName') {
+            //         return true;
+            //     }
+            // });
+            // $middlewareQueue->add($csrf);
 
         return $middlewareQueue;
     }

@@ -36,4 +36,11 @@ class Facesattendance extends Entity
         'modified' => true,
         'user' => true,
     ];
+
+    // CakePHP3では、こうです
+    // Entityにて
+    protected function _getTest()
+    {
+        return "DATE_FORMAT(inout_time, '%e')";
+    }
 }

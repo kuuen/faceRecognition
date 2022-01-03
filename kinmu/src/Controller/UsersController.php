@@ -22,7 +22,12 @@ class UsersController extends AppController
 
     public function isAuthorized($user = null)
     {
-        return (bool)($user['role'] === 'admin');
+        // アクションによって分岐可能
+        if ($this->request->getParam('action') == 'getUserName') {
+
+        }
+
+        return (bool)($user['role'] === 'admin'); // adminは無制限に許可
 
         return parent::isAuthorized($user);
     }
@@ -209,5 +214,5 @@ class UsersController extends AppController
                 echo $user->username;
             }
         }
-    }    
+    }
 }

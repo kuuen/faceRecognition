@@ -88,105 +88,135 @@ def kensyutu():
 def face_registration(id, path) :
 	''' 顔情報登録
 	'''
-	# csrfトークン取得するためにアクセス
-	url = 'http://localhost/kinmu/faces/add'
-	response = requests.get(url)
 
-	# クッキーを取得
-	cookies = response.cookies
-	bs = BeautifulSoup(response.text, "html.parser")
+	with requests.Session() as session :
 
-	# csrfトークンを取得
-	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+	# session = requests.Session()
 
-	# ヘッダーに追加
-	headers = {'X-CSRF-Token': token}
+		# サーバーログイン
+		with serverLogin(session) as response:
 
-	# 送信情報
-	payload = {'user_id': id, 'facepath': path}
+			bs = BeautifulSoup(response.text, "html.parser")
+			token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
 
-	# 登録処理
-	response = requests.post(url, data = payload, headers=headers, cookies=cookies)
-	scode = response.status_code
+			# クッキー取得
+			co = response.cookies
 
-	#f = open("file.html", "w")
-	#f.write(response.text)
+		# csrfトークン取得するためにgetUserNameページに接続
+		url = 'http://localhost/kinmu/faces/add'
+		with session.get(url, headers = {'X-CSRF-Token': token}, cookies = co) as response:
+
+			if response.status_code != 200:
+				sg.popup_error('サーバーエラー')
+				return ''
+
+			# csrfトークンを取得
+			token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+			he = {'X-CSRF-Token': token}
+
+			# クッキー取得
+			co = response.cookies
+
+			f = open("file.html", "w")
+			f.write(response.text)
+
+		# 送信情報
+		payload = {'user_id': id, 'facepath': path}
+
+		# 名前登録
+		with session.post(url, data = payload, headers = he, cookies = co) as response:
+			status_code = response.status_code
+			rst = response.text
+
+		# # クッキーを取得
+		# cookies = response.cookies
+		# bs = BeautifulSoup(response.text, "html.parser")
+
+		# # csrfトークンを取得
+		# token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+
+		# # ヘッダーに追加
+		# headers = {'X-CSRF-Token': token}
+
+		# # 送信情報
+		# payload = {'user_id': id, 'facepath': path}
+
+		# # 登録処理
+		# response = session.post(url, data = payload, headers=headers, cookies=cookies)
+		# scode = response.status_code
 
 	# なんかよく失敗する。CSRF対策あたりが原因
-	if scode == 200:
+	if status_code == 200:
 		return True
 	else:
 		return False
+
+def serverLogin(session):
+
+	url = 'http://localhost/kinmu/users/login'
+
+	# サーバーログイン
+	with session.get(url) as response:
+
+		# クッキー取得
+		co = response.cookies
+
+		# csrfトークンを取得
+		bs = BeautifulSoup(response.text, "html.parser")
+		token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+		payload = {'username': 'sys', 'password' : 123}
+
+	return session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = co)
 
 def getName(id):
 	''' 名前取得
 	'''
 
-	url = 'http://localhost/kinmu/users/login'
+	# セッション作成
+	with requests.Session() as session :
+		# サーバーにログイン
+		with serverLogin(session) as response:
 
-	session = requests.Session()
-	response = session.get(url)
+			bs = BeautifulSoup(response.text, "html.parser")
+			token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
 
-	# # csrfトークン取得するためにアクセス
-	# url = 'http://localhost/kinmu/users/login'
-	# response = requests.get(url)
+			# クッキー取得
+			co = response.cookies
 
-	# クッキーを取得
-	# cookies = response.cookies
+		# csrfトークン取得するためにgetUserNameページに接続
+		url = 'http://localhost/kinmu/users/getUserName'
+		with session.get(url, headers = {'X-CSRF-Token': token}, cookies = co) as response:
 
-	bs = BeautifulSoup(response.text, "html.parser")
+			if response.status_code != 200:
+				sg.popup_error('サーバーエラー')
+				return ''
 
-	# csrfトークンを取得
-	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
-	payload = {'username': 'sys', 'password' : 123}
+			# csrfトークンを取得
+			token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+			he = {'X-CSRF-Token': token}
 
-	response = session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = response.cookies)
+			# クッキー取得
+			co = response.cookies
 
-	f = open("file.html", "w")
-	f.write(response.text)
+		# 送信情報
+		payload = {'id': id}
 
-	#------------------------------------------------------------
+	# 名前取得
+	with session.post(url, data = payload, headers = he, cookies = response.cookies) as response:
+		status_code = response.status_code
+		rst = response.text
 
-	bs = BeautifulSoup(response.text, "html.parser")
-	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+	# f = open("file.html", "w")
+	# f.write(response.text)
 
-	# csrfトークン取得するためにアクセス
-	url = 'http://localhost/kinmu/users/getUserName'
-
-	response = session.get(url, headers = {'X-CSRF-Token': token}, cookies = response.cookies)
-	# response = requests.get(url)
-
-	if response.status_code != 200:
-		sg.popup_error('サーバーエラー')
-		return ''
-
-	# クッキーを取得
-	# cookies = response.cookies
-	bs = BeautifulSoup(response.text, "html.parser")
-
-	# csrfトークンを取得
-	token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
-
-	# ヘッダーに追加
-	he = {'X-CSRF-Token': token}
-	
-	# 送信情報
-	payload = {'id': id}
-
-	response = session.post(url, data = payload, headers = he, cookies = response.cookies)
-
-	# print(response.status_code)    # HTTPのステータスコード取得
-	# print(response.text)    # レスポンスのHTMLを文字列で取得
-
-
-
+	# ☆☆判定が不十分
 	result = ''
-	if response.status_code == 200:
+	if status_code == 200:
 
-		if response.text == '':
+		if rst == '':
 			sg.popup_error('社員が存在しません')
 		else:
-			result = response.text
+			result = rst[0:20]
 	else :
 		sg.popup_error('サーバーエラー')
 

@@ -1,10 +1,4 @@
-<?php
-/**
- * @var \App\View\AppView $this
- * @var \App\Model\Entity\Facesattendance $facesattendance
- * @var \Cake\Collection\CollectionInterface|string[] $users
- */
-?>
+
 <div class="row">
     <aside class="column">
         <div class="side-nav">

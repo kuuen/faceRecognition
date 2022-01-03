@@ -11,6 +11,19 @@ namespace App\Controller;
  */
 class FacesController extends AppController
 {
+
+    public function isAuthorized($user = null)
+    {
+        // // アクションによって分岐可能
+        // if ($this->request->getParam('action') == 'getUserName') {
+
+        // }
+
+        return (bool)($user['role'] === 'admin'); // adminは無制限に許可
+
+        return parent::isAuthorized($user);
+    }
+
     /**
      * Index method
      *
