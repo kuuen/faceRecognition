@@ -153,7 +153,7 @@ def face_registration(id, path) :
 
 def serverLogin(session):
 
-	url = 'http://localhost/kinmu/users/login'
+	url = 'http://localhost/kintai/syains/login'
 
 	# サーバーログイン
 	with session.get(url) as response:

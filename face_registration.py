@@ -12,16 +12,13 @@ import threading
 from multiprocessing.pool import ThreadPool
 
 cap = None
+# Webカメラから入力を開始
 red = (0, 0, 255)
 green = (0, 255, 0)
+fid = 1
 
 def videoStart():
-    # Webカメラから入力を開始
-    red = (0, 0, 255)
-    green = (0, 255, 0)
-    fid = 1
-
-    return cv2.VideoCapture(0)
+  return cv2.VideoCapture(0)
 
 pool = ThreadPool(processes=1)
 async_result = pool.apply_async(videoStart) # Tuple of args for foo
@@ -69,89 +66,86 @@ def face_registration(id, path) :
 #     conn.close()
 
     # url = 'http://localhost/kinmu/faces/insert?user_id=%s&path=%s'% (str(id), path)
-    url = 'http://localhost/kinmu/faces/insert/%s/%s'% (str(id), path)
-    # url = 'http://localhost/kinmu/faces/insert'
-    # data = {'user_id': str(id), 'path' : path}
+  url = 'http://localhost/kinmu/faces/insert/%s/%s'% (str(id), path)
+  # url = 'http://localhost/kinmu/faces/insert'
+  # data = {'user_id': str(id), 'path' : path}
 
-    response = requests.get(url)
-    # response = requests.post(url, data)
-    print(response.status_code)    # HTTPのステータスコード取得
-    print(response.text)    # レスポンスのHTMLを文字列で取得
-    return response.text
+  response = requests.get(url)
+  # response = requests.post(url, data)
+  print(response.status_code)    # HTTPのステータスコード取得
+  print(response.text)    # レスポンスのHTMLを文字列で取得
+  return response.text
 
 def kaokensyutu():
 
-    save_dir = "./facedata"
+	save_dir = "./facedata"
 
-    # Dlibを始める
-    detector = dlib.get_frontal_face_detector()
+	# Dlibを始める
+	detector = dlib.get_frontal_face_detector()
 
-    result = ''
+	result = ''
 
-    # 非同期で処理した結果を待つ
-    cap = async_result.get()
-    cap.set(3, 1920)
-    cap.set(4, 1080)
-    cap.set(5, 30)
+		# 非同期で処理した結果を待つ
+		# cap = async_result.get()
 
-    while True:
-        if values['id'] == '':
-            time.sleep(1)
-            continue
+	cap = cv2.VideoCapture(0)
 
-        # キーボード入力を処理する関数　引数はミリ秒の待ち時間
-        k = cv2.waitKey(100)
+	while True:
+		if values['id'] == '':
+			time.sleep(1)
+			continue
 
-        # Escキーが押されたら終了
-        if k == 27:
-            break
+		# キーボード入力を処理する関数　引数はミリ秒の待ち時間
+		k = cv2.waitKey(100)
 
-        # カメラの画像を読み込む
-        ok, frame = cap.read()
+		# Escキーが押されたら終了
+		if k == 27:
+			break
 
-        if not ok: break
-        # 画像を縮小表示する
-        frame = cv2.resize(frame, (500, 300))
+		# カメラの画像を読み込む
+		ok, frame = cap.read()
 
-        # カメラの内容を画面に表示する
-        cv2.imshow('test', frame)
-        # 映像をpng→jpgだとどうか？画像に変換してwindow画面を更新
-        # frame_1 = frame[90:990, 510:1410]
-        # img_y, img_x = frame_1.shape[:2]
+		if not ok: break
+		# 画像を縮小表示する
+		# frame = cv2.resize(frame, (500, 300))
 
-        # imgbytes = cv2.imencode('.png', frame_1)[1].tobytes()
-        # window['-IMAGE-'].update(data = imgbytes)
+		# カメラの内容を画面に表示する
+		# cv2.imshow('test', frame)
 
-        # 顔検出
-        dets = detector(frame, 1)
+		if ok is True:
+			imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
+			window['image'].update(data = imgbytes)
 
-        for k, d in enumerate(dets) :
+		# 顔検出
+		dets = detector(frame, 1)
 
-            x1 = int(d.left())
-            y1 = int(d.top())
-            x2 = int(d.right())
-            y2 = int(d.bottom())
-            # 顔部分を切り取る
-            im = frame[y1:y2, x1:x2]
+		for k, d in enumerate(dets) :
 
-            # 枠を描画
-            color = red
-            border = 5
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness = border)
+			x1 = int(d.left())
+			y1 = int(d.top())
+			x2 = int(d.right())
+			y2 = int(d.bottom())
+			# 顔部分を切り取る
+			im = frame[y1:y2, x1:x2]
 
-            # 顔部分を保存する
-            filename = str(time.time()) + '.jpg'
-            jpgfile = save_dir + '/' + filename 
-            # cv2.imwrite(jpgfile, im)
-            cv2.imwrite(jpgfile, frame)
+			# 枠を描画
+			color = red
+			border = 5
+			cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness = border)
 
-            result = filename
-            break
+			# 顔部分を保存する
+			filename = str(time.time()) + '.jpg'
+			jpgfile = save_dir + '/' + filename 
+			# cv2.imwrite(jpgfile, im)
+			cv2.imwrite(jpgfile, frame)
 
-        if result != '':
-            break
+			result = filename
+			break
 
-    return result
+		if result != '':
+				break
+
+	return result	
 
 def getName(id):
 #     # 接続する
@@ -180,14 +174,14 @@ def getName(id):
 #     conn.close()
     # return result
 
-    response = requests.get('http://localhost/kinmu/users/getUserName/%s' % str(id))
-    print(response.status_code)    # HTTPのステータスコード取得
-    print(response.text)    # レスポンスのHTMLを文字列で取得
+	response = requests.get('http://localhost/kinmu/users/getUserName/%s' % str(id))
+	print(response.status_code)    # HTTPのステータスコード取得
+	print(response.text)    # レスポンスのHTMLを文字列で取得
 
-    if response.text == '':
-        sg.popup_error('社員が存在しません')
+	if response.text == '':
+			sg.popup_error('社員が存在しません')
 
-    return response.text
+	return response.text
 
 sg.theme('DarkAmber')
 
@@ -203,35 +197,35 @@ layout_0 = [  [sg.Text('ここは1行目')],
             ]
 
 layout_1 = [
-            [sg.Image(filename='', key='-IMAGE-'), layout_0]
+            [sg.Image(filename='', key='image'), layout_0]
            ]         
 
 # window = sg.Window('サンプルプログラム', layout_1)
 window = sg.Window('OpenCV Image', layout_1, location=(300, 10))
 
 while True:
-    event, values = window.read()
-    if event == sg.WIN_CLOSED or event == 'キャンセル':
-        if cap != None:
-            cap.release()
-            cv2.destroyAllWindows()
+	event, values = window.read()
+	if event == sg.WIN_CLOSED or event == 'キャンセル':
+			if cap != None:
+					cap.release()
+					cv2.destroyAllWindows()
 
-        break
-    elif event == '検索':
-        print('あなたが入力した値： ', values[0])
-    elif event == 'find':
-        window["name"].update(getName(values['id']))
-    elif event == 'start':
-        if values['id'] == '':
-            sg.popup_error('社員を決定してください')
-            continue
+			break
+	elif event == '検索':
+		print('あなたが入力した値： ', values[0])
+	elif event == 'find':
+		window["name"].update(getName(values['id']))
+	elif event == 'start':
+		if values['id'] == '':
+				sg.popup_error('社員を決定してください')
+				continue
 
-        path = kaokensyutu()
-        if path != '':
-            face_registration(values['id'], path)
-            window["id"].update('')
-            window["name"].update('')
-            sg.popup_ok('顔登録しました')
+		path = kaokensyutu()
+		if path != '':
+			face_registration(values['id'], path)
+			window["id"].update('')
+			window["name"].update('')
+			sg.popup_ok('顔登録しました')
 
 window.close()
 

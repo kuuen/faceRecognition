@@ -23,7 +23,7 @@ layout = [
             [sg.Button('顔登録開始', key='start'), sg.Button('停止', key = 'stop'), sg.Button('キャンセル', key = 'cancel')] 
         ]
 
-window = sg.Window('顔登録', layout, location=(100, 100))	
+window = sg.Window('顔登録', layout, location=(100, 100))
 
 recording = False
 
