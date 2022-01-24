@@ -92,6 +92,38 @@ def createDtList() :
 
     return dtList
 
+def print(values) :
+
+    cookies = None
+    with requests.Session() as session :
+		# サーバーにログイン
+        with serverLogin(session) as response:
+            bs = BeautifulSoup(response.text, "html.parser")
+            token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
+
+            # ログイン失敗時
+            if response.status_code != 200:
+                sg.popup_error('認証失敗')
+                return None
+
+			# クッキー取得
+            cookies = response.cookies
+
+
+        # 送信情報
+        payload = {'date': values['date']}
+
+        for key in values.keys():
+            if 'id:' in key :
+                if values[key] == True:
+                    payload[key] = key[3:len(key)]
+
+        url = 'http://localhost/kintai/facesattendances/get_kintai_data'
+        with session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = cookies) as response:
+            status_code = response.status_code
+            rst = response.text
+
+
 def display():
 
     sg.theme('Dark Blue 3')
@@ -163,6 +195,8 @@ def display():
 
             for syain in syains:
                 window1[syain].Update(value = check)
+        if event == 'print':
+            print(values)
 
         if event == 'cancel':
             break
