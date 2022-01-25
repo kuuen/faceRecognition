@@ -9,7 +9,7 @@ layout = [
     [sg.Text('ログインID', size=(45, 1))],
     [sg.Input('', key = 'loginId')],
     [sg.Text('パスワード', size=(45, 1))],
-    [sg.Input('', key = 'password')],
+    [sg.Input('', key = 'password', password_char='●')],
     [sg.Button('ログイン', key='-login-')],
     [[sg.Checkbox('スワードを記憶する', key = 'passKey')]]
 ]

@@ -6,6 +6,8 @@ from dateutil.relativedelta import relativedelta
 from bs4 import BeautifulSoup
 import requests
 import json
+import openpyxl
+import shutil
 
 def serverLogin(session):
 
@@ -20,7 +22,7 @@ def serverLogin(session):
         # csrfトークンを取得
         bs = BeautifulSoup(response.text, "html.parser")
         token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
-        payload = {'login_id': 'sys', 'password' : 123}
+        payload = {'login_id': '123', 'password' : 123}
 
     return session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = co)
 
@@ -92,7 +94,7 @@ def createDtList() :
 
     return dtList
 
-def print(values) :
+def getPrintData(values) :
 
     cookies = None
     with requests.Session() as session :
@@ -120,42 +122,30 @@ def print(values) :
 
         url = 'http://localhost/kintai/facesattendances/get_kintai_data'
         with session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = cookies) as response:
-            status_code = response.status_code
+            # status_code = response.status_code
+
+            if response.status_code != 200:
+                sg.popup_error('サーバーエラー')
+                return None
+
             rst = response.text
 
+    return json.loads(rst)
+
+def editPrint(data):
+    len(data)
+
+    shutil.copy('./kintaikanrihyou.xlsx', './edit.xlsx')
+
+    wb = openpyxl.load_workbook('edit.xlsx')
 
 def display():
 
     sg.theme('Dark Blue 3')
 
-
-
     name_list = list(range(50))
 
     syains = getSyains()
-
-    # layout = [
-    #     [sg.Text('読み込むテキストファイルを選択してください', size=(45, 1))],
-    #     [sg.Checkbox(item[1], key=item[0]) for item in check_dic.items()],
-    #     [sg.Text('読み込むテキストファイルを選択してください', size=(45, 1))],
-    #     [sg.Text('読み込むテキストファイルを選択してください', size=(45, 1))],
-    #     [
-    #         sg.Table(
-    #             [
-    #                 [sg.Checkbox('チェック', key = '表示')],
-    #                 [sg.Checkbox("チェックボックス1", default=True)]
-    #             ], # 表の中身
-    #             ['社員名'], # ヘッダー名
-    #             col_widths=[20], # 列幅（列ごとに個別で指定）
-    #             auto_size_columns=False, # col_widthを指定するなら必ずFalseにすること！
-    #             select_mode=None, # 行の選択方法
-    #             num_rows=None, # 表示する行数（はみ出た分はスクロールバーで表示できる）
-    #             key='TABLE'
-    #         )
-
-    #     ],
-    #     [sg.Button('popup', key='-POPUP-')],
-    # ]
 
     # スクロール表示させたい画面構成を指定
     cols = [
@@ -196,7 +186,12 @@ def display():
             for syain in syains:
                 window1[syain].Update(value = check)
         if event == 'print':
-            print(values)
+            data = getPrintData(values)
+
+            if data == None:
+                continue
+
+            editPrint(data)
 
         if event == 'cancel':
             break
