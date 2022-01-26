@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import PySimpleGUI as sg
-import print
+import excelPrint
 
 sg.theme('Dark Blue 3')
 
@@ -26,7 +26,7 @@ while True:
 
     if event == '-login-':
         disp_text = ''
-        print.display()
+        excelPrint.display()
 
 # ウィンドウ破棄
 window1.close()
