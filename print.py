@@ -132,12 +132,26 @@ def getPrintData(values) :
 
     return json.loads(rst)
 
-def editPrint(data):
-    len(data)
+def editPrint(datas):
+    len(datas)
 
     shutil.copy('./kintaikanrihyou.xlsx', './edit.xlsx')
-
     wb = openpyxl.load_workbook('edit.xlsx')
+
+    maeMon = ''
+    maeSyainNo = ''
+
+    # for data in datas:
+    #     if maeMon != data[0]['kin_date'][0:-3] or maeSyainNo['syain_no'] : 
+    #         # 改ページを行う（ワークシートをコピー）
+    #         worksheet = wb.copy_worksheet(wb['moto'])
+    #         worksheet.title = data[0]['kin_date'][0:-3] + data['syain_name']
+
+    #     maeMon = data[0]['kin_date'][0:-3]
+    #     maeSyainNo = maeSyainNo['syain_no']
+
+
+    wb.save('edit.xlsx')
 
 def display():
 
