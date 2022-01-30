@@ -12,12 +12,16 @@ import threading
 from multiprocessing.pool import ThreadPool
 import numpy as np
 from facenet_pytorch import MTCNN, InceptionResnetV1
+import shutil
 
 layout = [
-  					[sg.Text('Realtime movie', size=(40, 1), justification='center', font='Helvetica 20',key='-status-')],
+  					[sg.Text('顔登録', size=(40, 1), justification='center', font='Helvetica 20',key='-status-')],
             [sg.Text('社員番号'), sg.Input('', key = 'id'), sg.Text(key = 'name') ,sg.Button('検索', key='find')],
 						[sg.Image(filename='', key='image')],
-            [sg.Button('顔登録開始', key='start'), sg.Button('停止', key = 'stop'), sg.Button('キャンセル', key = 'cancel')] 
+            [sg.Button('顔登録開始', key='start'), sg.Button('停止', key = 'stop'), sg.Button('キャンセル', key = 'cancel')] ,
+            [sg.Text('手動登録')],
+            [sg.Text("ファイル"), sg.Input(key = 'filePath'), sg.FileBrowse("ファイル選択", key="Browse", target="filePath", file_types=(("jpege Files", ".jpg"),)), sg.Button('手動登録', key='syudou')  ]
+
         ]
 
 window = sg.Window('顔登録', layout, location=(100, 100))	
@@ -103,7 +107,7 @@ def face_registration(id, path) :
 			co = response.cookies
 
 		# csrfトークン取得するためにgetUserNameページに接続
-		url = 'http://localhost/kinmu/faces/add'
+		url = 'http://localhost/kintai/faces/add'
 		with session.get(url, headers = {'X-CSRF-Token': token}, cookies = co) as response:
 
 			if response.status_code != 200:
@@ -121,7 +125,7 @@ def face_registration(id, path) :
 			f.write(response.text)
 
 		# 送信情報
-		payload = {'user_id': id, 'facepath': path}
+		payload = {'syain_id': id, 'facepath': path}
 
 		# 名前登録
 		with session.post(url, data = payload, headers = he, cookies = co) as response:
@@ -164,7 +168,7 @@ def serverLogin(session):
 		# csrfトークンを取得
 		bs = BeautifulSoup(response.text, "html.parser")
 		token = bs.find('input', attrs={ 'name' : '_csrfToken' }).get('value')
-		payload = {'username': 'sys', 'password' : 123}
+		payload = {'login_id': '123', 'password' : 123}
 
 	return session.post(url, data = payload, headers = {'X-CSRF-Token': token}, cookies = co)
 
@@ -184,7 +188,7 @@ def getName(id):
 			co = response.cookies
 
 		# csrfトークン取得するためにgetUserNameページに接続
-		url = 'http://localhost/kinmu/users/getUserName'
+		url = 'http://localhost/kintai/syains/getUserName'
 		with session.get(url, headers = {'X-CSRF-Token': token}, cookies = co) as response:
 
 			if response.status_code != 200:
@@ -227,52 +231,69 @@ recording = False
 save_dir = "./facedata"
 
 while True:
-	event, values = window.read(timeout=20)
-	if event in (None, 'cancel'):
-			break
-	elif event == 'find':
-		window["name"].update(getName(values['id']))
-	elif event == 'start':
-		if window["name"].DisplayText == '':
-				sg.popup_error('社員を決定してください')
-				continue
+    event, values = window.read(timeout=20)
+    if event in (None, 'cancel'):
+            break
+    elif event == 'find':
+        window["name"].update(getName(values['id']))
+    elif event == 'start':
+        if window["name"].DisplayText == '':
+                sg.popup_error('社員を決定してください')
+                continue
 
-		window['-status-'].update('Live')
-		camera_number = 0
-		if cap == None:
-			cap = cv2.VideoCapture(camera_number, cv2.CAP_DSHOW)
-			# cap = cv2.VideoCapture(camera_number)
+        window['-status-'].update('Live')
+        camera_number = 0
+        if cap == None:
+            cap = cv2.VideoCapture(camera_number, cv2.CAP_DSHOW)
+            # cap = cv2.VideoCapture(camera_number)
 
-			# Dlibを始める
-			detector = dlib.get_frontal_face_detector()
-			recording = True
+            # Dlibを始める
+            detector = dlib.get_frontal_face_detector()
+            recording = True
 
-	elif event == 'stop':
-		window['-status-'].update("Stop")
-		recording = False
-		# 幅、高さ　戻り値Float
-		W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-		H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-		# print(H,W)
-		img = np.full((H, W), 0)
-		# ndarry to bytes
-		imgbytes = cv2.imencode('.png', img)[1].tobytes()
-		window['image'].update(data=imgbytes)
-		cap.release()
-		cv2.destroyAllWindows()
+    elif event == 'stop':
+        window['-status-'].update("Stop")
+        recording = False
+        # 幅、高さ　戻り値Float
+        W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # print(H,W)
+        img = np.full((H, W), 0)
+        # ndarry to bytes
+        imgbytes = cv2.imencode('.png', img)[1].tobytes()
+        window['image'].update(data=imgbytes)
+        cap.release()
+        cv2.destroyAllWindows()
 
-	if recording:
-		path = kensyutu()
-		if path != '':
+    elif event == 'syudou':
+        if window["name"].DisplayText == '':
+                sg.popup_error('社員を決定してください')
+                continue
 
-			if face_registration(values['id'], path) :
-				window["id"].update('')
-				window["name"].update('')
-				sg.popup_ok('顔登録しました')
-			else:
-				sg.popup_error('顔登録サーバーエラー')
-				os.remove(save_dir + '/' + path)
+        fileName = str(time.time()) + '.jpg'
+        shutil.copy(values["filePath"], save_dir + '/' +  fileName)
 
-			window['-status-'].update('待機中')
+        if face_registration(values['id'], fileName) :
+            window["id"].update('')
+            window["name"].update('')
+            window["filePath"].update('')
+            sg.popup_ok('顔登録しました')
+        else:
+            sg.popup_error('顔登録サーバーエラー')
+            os.remove(save_dir + '/' + fileName)
+
+    if recording:
+        path = kensyutu()
+        if path != '':
+
+            if face_registration(values['id'], path) :
+                window["id"].update('')
+                window["name"].update('')
+                sg.popup_ok('顔登録しました')
+            else:
+                sg.popup_error('顔登録サーバーエラー')
+                os.remove(save_dir + '/' + path)
+
+            window['-status-'].update('待機中')
 
 window.close()

@@ -5,16 +5,13 @@ from PIL import ImageGrab
 def kenshutu() :
 
     # 分類器ディレクトリ(以下から取得)
-    # https://github.com/opencv/opencv/blob/master/data/haarcascades/
-    # https://github.com/opencv/opencv_contrib/blob/master/modules/face/data/cascades/
-
     cascade_path = "./models/haarcascade_frontalface_default.xml"
 
 
     # 使用ファイルと入出力ディレクトリ
     image_file = "test.jpg"
-    image_path = "./inputs/" + image_file
-    output_path = "./outputs/" + image_file
+    image_path = "./hukusuu/inputs/" + image_file
+    output_path = "./hukusuu/outputs/" + image_file
 
     # ディレクトリ確認用(うまく行かなかった時用)
     #import os
@@ -54,7 +51,7 @@ def kenshutu() :
             w = rect[2]
             h = rect[3]
 
-            cv2.imwrite('./outputs/demo' + str(i) +'.jpg', image[y:y+h, x:x+w])
+            cv2.imwrite('./hukusuu/outputs/demo' + str(i) +'.jpg', image[y:y+h, x:x+w])
             i += 1
 
         #認識結果の保存
@@ -74,7 +71,7 @@ while True:
 
     if event == '-start-':
         screenshot = ImageGrab.grab()
-        screenshot.save('./inputs/test.jpg')
+        screenshot.save('./hukusuu/inputs/test.jpg')
         kenshutu()
 
 # ウィンドウ破棄

@@ -2,8 +2,7 @@ import keras
 import cv2, dlib, pprint, os
 import numpy as np
 from keras.models import load_model
-import time
-from datetime import datetime
+import datetime
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image
 import requests
@@ -172,145 +171,149 @@ def drowText(x, y, text, frame):
 
 
 def kensyutu():
-	'''顔検出
-	'''
+    '''顔検出
+    '''
 
-	window['-status-'].update('顔検出中')
-	result = ''
-	ret, frame = cap.read()
-	if ret is True:
-		imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
-		window['image'].update(data=imgbytes)
-	else:
-		return
+    # 分類器ディレクトリ(以下から取得)
+    cascade_path = "./models/haarcascade_frontalface_default.xml"
+
+    image = cv2.imread(r'./input/test.png')
+
+    window['-status-'].update('顔検出中')
+    result = ''
+
+    syaindatas = getSyainData()
+    # ret, frame = cap.read()
+    # if ret is True:
+    #     imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
+    #     window['image'].update(data=imgbytes)
+    # else:
+    #     return
 
 	# 画像を縮小表示する
 	# frame = cv2.resize(frame, (500, 300))
 
 	# 顔検出
-	dets = detector(frame, 1)
+    dets = detector(image, 1)
 
-	for k, d in enumerate(dets) :
+    for k, d in enumerate(dets) :
 
-		# 顔の範囲を取得
-		#pprint.pprint(d)
-		x1 = int(d.left())
-		y1 = int(d.top())
-		x2 = int(d.right())
-		y2 = int(d.bottom())
-		# 顔部分を切り取る
-		im = frame[y1:y2, x1:x2]
+        # 顔の範囲を取得
+        #pprint.pprint(d)
+        x1 = int(d.left())
+        y1 = int(d.top())
+        x2 = int(d.right())
+        y2 = int(d.bottom())
+        # 顔部分を切り取る
+        im = image[y1:y2, x1:x2]
 
-		# 枠を描画
-		color = red
-		border = 5
-		cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness = border)
+        # 枠を描画
+        color = red
+        border = 5
+        cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness = border)
 
-		m = (datetime.now().strftime('%f'))
+        m = (datetime.datetime.now().strftime('%f'))
 
-		# 顔部分を保存する
-		jpgfile = save_dir + '/' + m + '.jpg'
-		cv2.imwrite(jpgfile, frame)
-		#cv2.imwrite(jpgfile, im)
-		img = Image.open(jpgfile)
-		# save_pathを指定すると、切り取った顔画像が確認できます。
-		#img_cropped = mtcnn(img, save_path="cropped_img1.jpg")
-		img_cropped = mtcnn(img)
+        # 顔部分を保存する
+        jpgfile = save_dir + '/' + m + '.jpg'
+        # cv2.imwrite(jpgfile, image)
+        #cv2.imwrite(jpgfile, im)
+        # img = Image.open(jpgfile)
+        # save_pathを指定すると、切り取った顔画像が確認できます。
+        # img_cropped = mtcnn(img, save_path="cropped_img1.jpg")
+        img_cropped = mtcnn(image[y1:y2, x1:x2])
+        # img_cropped = mtcnn(img)
+        # img_cropped = mtcnn(image)
 
-		# 正しく顔画像が取得できない場合がある
-		if img_cropped == None :
-			return
+        # 正しく顔画像が取得できない場合がある
+        if img_cropped == None :
+            return
 
-		# 切り抜いた顔データを512個の数字に
-		img_embedding = resnet(img_cropped.unsqueeze(0))
+        # 切り抜いた顔データを512個の数字に
+        img_embedding = resnet(img_cropped.unsqueeze(0))
 
-		# 512個の数字にしたものはpytorchのtensorという型なので、numpyの方に変換
-		p = img_embedding.squeeze().to('cpu').detach().numpy().copy()
+        # 512個の数字にしたものはpytorchのtensorという型なので、numpyの方に変換
+        p = img_embedding.squeeze().to('cpu').detach().numpy().copy()
 
-		flg = False
-		for syaindata in getSyainData():
+        flg = False
+        # 社員の画像分ループ 該当した社員はリストから削除する
+        for syaindata in syaindatas:
 
-			if syaindata['facedata'] == 'NoData':
-				continue
+            if syaindata['facedata'] == 'NoData':
+                continue
 
-			# 類似度を計算して顔認証
-			res = cos_similarity(p, syaindata['facedata'])
+            # 類似度を計算して顔認証
+            res = cos_similarity(p, syaindata['facedata'])
 
-			# 顔データ判定
-			if res >= 0.7 :
-				flg = True
-				dt = datetime.datetime.today()
-				t = dt.time()
+            # 顔データ判定
+            if res >= 0.7 :
+                flg = True
+                dt = datetime.datetime.today()
+                t = dt.time()
 
-				# 仮でここに置く
-				sendSyukinData(syaindata['syain']['id'],  format(dt, '%Y-%m-%d %H:%M:%S'))
-				window['-status-'].update(syaindata['syain']['syain_name'] + ' さん おはようございます！')
+                # 仮でここに置く
+                sendSyukinData(syaindata['syain']['id'],  format(dt, '%Y-%m-%d %H:%M:%S'))
+                window['-status-'].update(syaindata['syain']['syain_name'] + ' さん おはようございます！')
 
-				if t <= datetime.time(9, 00, 00):
-					# drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん おはようございます！', frame)
-					window['-status-'].update(syaindata['syain']['syain_name'] + ' さん おはようございます！')
-				elif t >= datetime.time(13, 00, 00):
-					# drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん お疲れ様です！', frame)
-					window['-status-'].update(syaindata['syain']['syain_name'] + ' さん お疲れ様です！')
+                if t <= datetime.time(9, 0, 0):
+                    # drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん おはようございます！', frame)
+                    window['-status-'].update(syaindata['syain']['syain_name'] + ' さん おはようございます！')
+                elif t >= datetime.time(13, 00, 00):
+                    # drowText(x1, y1 - 30, syaindata['user']['name'] + ' さん お疲れ様です！', frame)
+                    window['-status-'].update(syaindata['syain']['syain_name'] + ' さん お疲れ様です！')
 
-				break
+                # 候補を削除していく
+                syaindatas.remove(syaindata)
+                # break
 
 
-		if flg == False:
-			window['-status-'].update('顔検出中')
+        if flg == False:
+            window['-status-'].update('顔検出中')
 
-		# 枠を描画
-		color = red
-		border = 5
-		cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness = border)
+        # 枠を描画
+        # color = red
+        # border = 5
+        cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness = border)
 
-		#　ウインドウに描画
-		imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
-		window['image'].update(data=imgbytes)
+        #　ウインドウに描画
+        imgbytes = cv2.imencode('.png', image)[1].tobytes() 
+        window['image'].update(data=imgbytes)
 
 
 while True:
-	event, values = window.read(timeout=20)
-	if event in (None, 'cancel'):
-		break
-	elif event == 'start':
+    event, values = window.read(timeout=20)
+    if event in (None, 'cancel'):
+        break
+    elif event == 'start':
 
-		window['-status-'].update('Live')
-		camera_number = 0
-		if cap == None:
-			cap = cv2.VideoCapture(camera_number, cv2.CAP_DSHOW)
-			# cap = cv2.VideoCapture(camera_number)
+        window['-status-'].update('Live')
+        # camera_number = 0
+        # if cap == None:
+        # 	cap = cv2.VideoCapture(camera_number, cv2.CAP_DSHOW)
+        # 	# cap = cv2.VideoCapture(camera_number)
 
-			# Dlibを始める
-			detector = dlib.get_frontal_face_detector()
-			recording = True
+        # 	# Dlibを始める
+        # 	detector = dlib.get_frontal_face_detector()
+        # 	recording = True
+        kensyutu()
 
-	elif event == 'stop':
-		window['-status-'].update("Stop")
-		recording = False
-		# 幅、高さ　戻り値Float
-		W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-		H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-		# print(H,W)
-		img = np.full((H, W), 0)
-		# ndarry to bytes
-		imgbytes = cv2.imencode('.png', img)[1].tobytes()
-		window['image'].update(data=imgbytes)
-		cap.release()
-		cv2.destroyAllWindows()
+    elif event == 'stop':
+        window['-status-'].update("Stop")
+        recording = False
+        # 幅、高さ　戻り値Float
+        W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # print(H,W)
+        img = np.full((H, W), 0)
+        # ndarry to bytes
+        imgbytes = cv2.imencode('.png', img)[1].tobytes()
+        window['image'].update(data=imgbytes)
+        cap.release()
+        cv2.destroyAllWindows()
 
-	if recording:
-		kensyutu()
-		# path = kensyutu()
-		# if path != '':
+    # if recording:
+    #     kensyutu()
 
-		# 	if face_registration(values['id'], path) :
-		# 		window["id"].update('')
-		
-		# 		sg.popup_ok('顔登録しました')
-		# 	else:
-		# 		sg.popup_error('顔登録サーバーエラー')
-		# 	window['-status-'].update('待機中')
 
 window.close()
 
