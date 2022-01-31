@@ -246,3 +246,5 @@ def display():
 
     # ウィンドウ破棄
     window1.close()
+
+# git 確認
